@@ -89,7 +89,7 @@ export default function Phase3SummaryPage() {
               <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-semibold">2</span>
               <div>
                 <strong>Intégrer ReviewsComponent dans page produit</strong>
-                <p className="text-gray-600">Importer et ajouter <code className="bg-gray-100 px-2 py-1 rounded text-xs">&lt;ReviewsComponent produitId={id} /&gt;</code></p>
+                <p className="text-gray-600">Importer et ajouter <code className="bg-gray-100 px-2 py-1 rounded text-xs">&lt;ReviewsComponent produitId={'{id}'} /&gt;</code></p>
               </div>
             </li>
             <li className="flex gap-3">

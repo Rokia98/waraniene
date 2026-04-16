@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -7,7 +8,7 @@ import { Eye, EyeOff, User, Mail, Lock, Phone, MapPin, AlertCircle } from 'lucid
 import AppService, { validationService, objectValidators, validationUtils, notify } from '@/services';
 import { Button } from '@/components/ui/Button';
 
-export default function AuthPage() {
+function AuthPageContent() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -520,5 +521,12 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  );
+}
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p>Chargement...</p></div>}>
+      <AuthPageContent />
+    </Suspense>
   );
 }

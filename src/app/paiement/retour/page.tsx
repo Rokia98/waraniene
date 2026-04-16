@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,7 +9,7 @@ import Link from 'next/link';
  * Page de retour après paiement FusionPay
  * Reçoit le token dans l'URL et vérifie le statut
  */
-export default function RetourPaiementPage() {
+function RetourPaiementContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -179,5 +180,13 @@ export default function RetourPaiementPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function RetourPaiementPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p>Chargement...</p></div>}>
+      <RetourPaiementContent />
+    </Suspense>
   );
 }

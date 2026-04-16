@@ -131,25 +131,6 @@ export async function GET(request: NextRequest) {
       produits_populaires: topProduitsArray,
       genere_le: new Date().toISOString()
     });
-        inactifs: totalProduits - produitsActifs
-      },
-      artisans: {
-        total: totalArtisans,
-        actifs: artisansActifs,
-        inactifs: totalArtisans - artisansActifs
-      },
-      acheteurs: {
-        nouveaux: nouveauxAcheteurs
-      },
-      commandes: {
-        total: totalCommandes,
-        chiffre_affaires: chiffreAffaires,
-        par_statut: commandesParStatut,
-        evolution: evolutionCommandes
-      },
-      produits_populaires: topProduitsArray,
-      genere_le: new Date().toISOString()
-    });
 
   } catch (error) {
     console.error('Erreur API statistiques:', error);

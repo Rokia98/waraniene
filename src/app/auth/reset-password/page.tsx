@@ -1,8 +1,9 @@
 "use client";
+import { Suspense } from "react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
   const [password, setPassword] = useState("");
@@ -75,5 +76,13 @@ export default function ResetPasswordPage() {
       </form>
       {message && <div className="mt-4 text-center text-sm text-gray-700">{message}</div>}
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="max-w-md mx-auto mt-16 p-6 text-center">Chargement...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
