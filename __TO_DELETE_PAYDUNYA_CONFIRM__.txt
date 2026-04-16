@@ -1,0 +1,1 @@
+Suppression de tous les fichiers, types, scripts et collections liés à PayDunya pour migration vers Kkiapay.
