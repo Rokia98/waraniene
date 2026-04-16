@@ -280,3 +280,6 @@ export { DB_TYPE as dbType };
 // Exporter aussi les clients originaux pour des cas spéciaux
 export { supabase, supabaseAdmin } from './supabase';
 export { query as mysqlQuery, execute as mysqlExecute } from './mysql';
+
+// Default export pour compatibilité avec `import db from '@/lib/db'`
+export default db;
