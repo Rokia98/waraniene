@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
       // Communs
       items, 
       mode_paiement,
+      methode_paiement,
       adresse_livraison,
       montant_total
     } = body;
@@ -305,9 +306,14 @@ export async function POST(request: NextRequest) {
       montant_total: montantFinal,
       mode_paiement,
       adresse_livraison,
-      statut: 'en_attente',
+      statut: mode_paiement === 'paiement_livraison' ? 'confirmee' : 'en_attente',
       date_commande: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
+
+    // Ajouter la méthode de paiement spécifique (pour paiement immédiat)
+    if (methode_paiement) {
+      commandeData.methode_paiement = methode_paiement;
+    }
 
     // Ajouter acheteur_id (résolu automatiquement ou fourni)
     if (resolvedAcheteurId) {

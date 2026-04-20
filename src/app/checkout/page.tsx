@@ -28,7 +28,10 @@ interface CheckoutForm {
   code_postal?: string;
   
   // Mode de paiement
-  mode_paiement: 'orange_money' | 'mtn_money' | 'carte_bancaire';
+  mode_paiement: 'paiement_livraison' | 'paiement_immediat';
+  
+  // Pour paiement immédiat - sous-méthode
+  methode_paiement?: 'orange_money' | 'mtn_money' | 'carte_bancaire';
   
   // Pour Mobile Money
   numero_mobile?: string;
@@ -57,7 +60,8 @@ export default function CheckoutPage() {
     ville: '',
     commune: '',
     pays: "Côte d'Ivoire",
-    mode_paiement: 'orange_money',
+    mode_paiement: 'paiement_livraison',
+    methode_paiement: 'orange_money',
     numero_mobile: ''
   });
 
@@ -137,11 +141,16 @@ export default function CheckoutPage() {
         return !!(formData.adresse && formData.ville && formData.pays);
       case 3:
         // Validation paiement
-        if (formData.mode_paiement === 'orange_money' || formData.mode_paiement === 'mtn_money') {
-          return !!formData.numero_mobile;
+        if (formData.mode_paiement === 'paiement_livraison') {
+          return true;
         }
-        if (formData.mode_paiement === 'carte_bancaire') {
-          return !!(formData.numero_carte && formData.nom_carte && formData.date_expiration && formData.cvv);
+        if (formData.mode_paiement === 'paiement_immediat') {
+          if (formData.methode_paiement === 'orange_money' || formData.methode_paiement === 'mtn_money') {
+            return !!formData.numero_mobile;
+          }
+          if (formData.methode_paiement === 'carte_bancaire') {
+            return !!(formData.numero_carte && formData.nom_carte && formData.date_expiration && formData.cvv);
+          }
         }
         return true;
       default:
@@ -182,6 +191,7 @@ export default function CheckoutPage() {
         items,
         montant_total: total,
         mode_paiement: formData.mode_paiement,
+        methode_paiement: formData.mode_paiement === 'paiement_immediat' ? formData.methode_paiement : undefined,
         adresse_livraison: adresse_complete,
         
         // Info paiement mobile money
@@ -218,46 +228,51 @@ export default function CheckoutPage() {
         console.log('👤 Compte créé automatiquement pour:', data.acheteur?.email);
       }
 
-      // Initier le paiement avec FusionPay
-      console.log('💳 Initiation du paiement FusionPay...');
-
-      const paiementResponse = await fetch('/api/paiement/initier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          commande_id: commandeId,
-          montant: total,
-          customer: {
-            name: `${formData.prenom} ${formData.nom}`,
-            email: formData.email,
-            phone: formData.telephone,
-          },
-          metadata: {
-            mode_paiement: formData.mode_paiement,
-            numero_mobile: formData.numero_mobile,
-          },
-        }),
-      });
-
-      if (!paiementResponse.ok) {
-        const errorData = await paiementResponse.json();
-        throw new Error(errorData.error || 'Erreur lors de l\'initiation du paiement');
-      }
-
-      const paiementData = await paiementResponse.json();
-      console.log('✅ Paiement initié:', paiementData);
-
-      toast.success('Redirection vers la page de paiement...');
-      
       // Vider le panier
       clearCart();
-      
-      // Rediriger vers la page de paiement PayDunya
-      if (paiementData.invoice_url) {
-        window.location.href = paiementData.invoice_url;
+
+      if (formData.mode_paiement === 'paiement_livraison') {
+        // Paiement à la livraison : rediriger directement vers la confirmation
+        toast.success('Commande confirmée ! Vous paierez à la livraison.');
+        router.push(`/commande/confirmation?id=${commandeId}`);
       } else {
-        // Fallback: rediriger vers la page de confirmation
-        router.push(`/commande/${commandeId}/confirmation`);
+        // Paiement immédiat : initier le paiement en ligne
+        console.log('💳 Initiation du paiement...');
+
+        const paiementResponse = await fetch('/api/paiement/initier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            commande_id: commandeId,
+            montant: total,
+            customer: {
+              name: `${formData.prenom} ${formData.nom}`,
+              email: formData.email,
+              phone: formData.telephone,
+            },
+            metadata: {
+              mode_paiement: formData.methode_paiement,
+              numero_mobile: formData.numero_mobile,
+            },
+          }),
+        });
+
+        if (!paiementResponse.ok) {
+          const errorData = await paiementResponse.json();
+          throw new Error(errorData.error || 'Erreur lors de l\'initiation du paiement');
+        }
+
+        const paiementData = await paiementResponse.json();
+        console.log('✅ Paiement initié:', paiementData);
+
+        toast.success('Redirection vers la page de paiement...');
+
+        // Rediriger vers la page de paiement
+        if (paiementData.invoice_url) {
+          window.location.href = paiementData.invoice_url;
+        } else {
+          router.push(`/commande/confirmation?id=${commandeId}`);
+        }
       }
 
     } catch (error: any) {
@@ -493,141 +508,213 @@ export default function CheckoutPage() {
                     Mode de paiement
                   </h2>
                   
-                  {/* Payment Method Selection */}
+                  {/* Main Payment Choice */}
                   <div className="grid gap-4 mb-6">
                     <div
-                      onClick={() => setFormData(prev => ({ ...prev, mode_paiement: 'orange_money' }))}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                        formData.mode_paiement === 'orange_money' 
+                      onClick={() => setFormData(prev => ({ ...prev, mode_paiement: 'paiement_livraison' }))}
+                      className={`border-2 rounded-lg p-5 cursor-pointer transition-colors ${
+                        formData.mode_paiement === 'paiement_livraison' 
                           ? 'border-primary-500 bg-primary-50' 
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Smartphone className="w-6 h-6 text-orange-600" />
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          formData.mode_paiement === 'paiement_livraison' ? 'border-primary-500' : 'border-gray-300'
+                        }`}>
+                          {formData.mode_paiement === 'paiement_livraison' && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
+                          )}
+                        </div>
+                        <Truck className="w-6 h-6 text-green-600" />
                         <div>
-                          <h3 className="font-semibold text-gray-900">Orange Money</h3>
-                          <p className="text-sm text-gray-600">Paiement mobile sécurisé</p>
+                          <h3 className="font-semibold text-gray-900">Paiement à la livraison</h3>
+                          <p className="text-sm text-gray-600">Payez en espèces ou mobile money à la réception de votre commande</p>
                         </div>
                       </div>
                     </div>
                     
                     <div
-                      onClick={() => setFormData(prev => ({ ...prev, mode_paiement: 'mtn_money' }))}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                        formData.mode_paiement === 'mtn_money' 
+                      onClick={() => setFormData(prev => ({ ...prev, mode_paiement: 'paiement_immediat' }))}
+                      className={`border-2 rounded-lg p-5 cursor-pointer transition-colors ${
+                        formData.mode_paiement === 'paiement_immediat' 
                           ? 'border-primary-500 bg-primary-50' 
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Smartphone className="w-6 h-6 text-yellow-600" />
-                        <div>
-                          <h3 className="font-semibold text-gray-900">MTN Mobile Money</h3>
-                          <p className="text-sm text-gray-600">Paiement mobile MTN</p>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          formData.mode_paiement === 'paiement_immediat' ? 'border-primary-500' : 'border-gray-300'
+                        }`}>
+                          {formData.mode_paiement === 'paiement_immediat' && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
+                          )}
                         </div>
-                      </div>
-                    </div>
-                    
-                    <div
-                      onClick={() => setFormData(prev => ({ ...prev, mode_paiement: 'carte_bancaire' }))}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                        formData.mode_paiement === 'carte_bancaire' 
-                          ? 'border-primary-500 bg-primary-50' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
                         <CreditCard className="w-6 h-6 text-blue-600" />
                         <div>
-                          <h3 className="font-semibold text-gray-900">Carte bancaire</h3>
-                          <p className="text-sm text-gray-600">Visa, Mastercard</p>
+                          <h3 className="font-semibold text-gray-900">Payer maintenant</h3>
+                          <p className="text-sm text-gray-600">Payez immédiatement par Mobile Money ou carte bancaire</p>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Payment Details */}
-                  {(formData.mode_paiement === 'orange_money' || formData.mode_paiement === 'mtn_money') && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Numéro de téléphone *
-                      </label>
-                      <input
-                        type="tel"
-                        name="numero_mobile"
-                        required
-                        value={formData.numero_mobile}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="+225 XX XX XX XX XX"
-                      />
+
+                  {/* Paiement à la livraison - Info */}
+                  {formData.mode_paiement === 'paiement_livraison' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-green-900">Paiement à la livraison</h4>
+                          <p className="text-sm text-green-700 mt-1">
+                            Vous paierez directement au livreur lors de la réception de votre commande. 
+                            Modes acceptés : espèces, Orange Money, MTN Mobile Money.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
-                  
-                  {formData.mode_paiement === 'carte_bancaire' && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Numéro de carte *
-                        </label>
-                        <input
-                          type="text"
-                          name="numero_carte"
-                          required
-                          value={formData.numero_carte}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          placeholder="1234 5678 9012 3456"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Nom sur la carte *
-                        </label>
-                        <input
-                          type="text"
-                          name="nom_carte"
-                          required
-                          value={formData.nom_carte}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          placeholder="Nom tel qu'il apparaît sur la carte"
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Date d&apos;expiration *
-                          </label>
-                          <input
-                            type="text"
-                            name="date_expiration"
-                            required
-                            value={formData.date_expiration}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            placeholder="MM/YY"
-                          />
+
+                  {/* Paiement immédiat - Sous-méthodes */}
+                  {formData.mode_paiement === 'paiement_immediat' && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Choisir votre méthode de paiement :</h3>
+                      <div className="grid gap-3 mb-6">
+                        <div
+                          onClick={() => setFormData(prev => ({ ...prev, methode_paiement: 'orange_money' }))}
+                          className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                            formData.methode_paiement === 'orange_money' 
+                              ? 'border-primary-500 bg-orange-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Smartphone className="w-5 h-5 text-orange-600" />
+                            <div>
+                              <h4 className="font-medium text-gray-900">Orange Money</h4>
+                              <p className="text-xs text-gray-600">Paiement mobile sécurisé</p>
+                            </div>
+                          </div>
                         </div>
                         
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            CVV *
-                          </label>
-                          <input
-                            type="text"
-                            name="cvv"
-                            required
-                            value={formData.cvv}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            placeholder="123"
-                          />
+                        <div
+                          onClick={() => setFormData(prev => ({ ...prev, methode_paiement: 'mtn_money' }))}
+                          className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                            formData.methode_paiement === 'mtn_money' 
+                              ? 'border-primary-500 bg-yellow-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Smartphone className="w-5 h-5 text-yellow-600" />
+                            <div>
+                              <h4 className="font-medium text-gray-900">MTN Mobile Money</h4>
+                              <p className="text-xs text-gray-600">Paiement mobile MTN</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div
+                          onClick={() => setFormData(prev => ({ ...prev, methode_paiement: 'carte_bancaire' }))}
+                          className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                            formData.methode_paiement === 'carte_bancaire' 
+                              ? 'border-primary-500 bg-blue-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <CreditCard className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <h4 className="font-medium text-gray-900">Carte bancaire</h4>
+                              <p className="text-xs text-gray-600">Visa, Mastercard</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Payment Details */}
+                      {(formData.methode_paiement === 'orange_money' || formData.methode_paiement === 'mtn_money') && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Numéro de téléphone *
+                          </label>
+                          <input
+                            type="tel"
+                            name="numero_mobile"
+                            required
+                            value={formData.numero_mobile}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="+225 XX XX XX XX XX"
+                          />
+                        </div>
+                      )}
+                      
+                      {formData.methode_paiement === 'carte_bancaire' && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Numéro de carte *
+                            </label>
+                            <input
+                              type="text"
+                              name="numero_carte"
+                              required
+                              value={formData.numero_carte}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                              placeholder="1234 5678 9012 3456"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Nom sur la carte *
+                            </label>
+                            <input
+                              type="text"
+                              name="nom_carte"
+                              required
+                              value={formData.nom_carte}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                              placeholder="Nom tel qu&apos;il appara\u00eet sur la carte"
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Date d&apos;expiration *
+                              </label>
+                              <input
+                                type="text"
+                                name="date_expiration"
+                                required
+                                value={formData.date_expiration}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                placeholder="MM/YY"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                CVV *
+                              </label>
+                              <input
+                                type="text"
+                                name="cvv"
+                                required
+                                value={formData.cvv}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                placeholder="123"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -664,8 +751,9 @@ export default function CheckoutPage() {
                         <div className="flex justify-between">
                           <span>Paiement:</span>
                           <span>{
-                            formData.mode_paiement === 'orange_money' ? 'Orange Money' :
-                            formData.mode_paiement === 'mtn_money' ? 'MTN Mobile Money' :
+                            formData.mode_paiement === 'paiement_livraison' ? 'Paiement à la livraison' :
+                            formData.methode_paiement === 'orange_money' ? 'Orange Money' :
+                            formData.methode_paiement === 'mtn_money' ? 'MTN Mobile Money' :
                             'Carte bancaire'
                           }</span>
                         </div>
@@ -710,8 +798,10 @@ export default function CheckoutPage() {
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                           Traitement...
                         </>
-                      ) : (
+                      ) : formData.mode_paiement === 'paiement_livraison' ? (
                         'Confirmer la commande'
+                      ) : (
+                        'Payer et confirmer'
                       )}
                     </Button>
                   )}
