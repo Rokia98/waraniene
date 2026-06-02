@@ -1,6 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Helper: récupérer les données acheteur (depuis table acheteurs ou champs de la commande)
+async function getAcheteurData(commande: any) {
+  let acheteurData = null;
+  if (commande.acheteur_id) {
+    const acheteurs = await db.select('acheteurs', {
+      where: { id: commande.acheteur_id },
+      limit: 1
+    });
+    const acheteur = acheteurs && acheteurs.length > 0 ? acheteurs[0] : null;
+    if (acheteur) {
+      acheteurData = {
+        id: acheteur.id,
+        nom: acheteur.nom,
+        prenom: acheteur.prenom,
+        email: acheteur.email,
+        telephone: acheteur.telephone
+      };
+    }
+  }
+
+  // Fallback: utiliser les champs nom_acheteur/email_acheteur/telephone_acheteur de la commande
+  if (!acheteurData && (commande.nom_acheteur || commande.email_acheteur)) {
+    const nameParts = (commande.nom_acheteur || '').trim().split(' ');
+    acheteurData = {
+      id: null,
+      prenom: nameParts[0] || '',
+      nom: nameParts.slice(1).join(' ') || '',
+      email: commande.email_acheteur || '',
+      telephone: commande.telephone_acheteur || ''
+    };
+  }
+
+  return acheteurData;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -23,24 +58,8 @@ export async function GET(
 
     const commande = commandes[0];
 
-    // Récupérer l'acheteur
-    let acheteurData = null;
-    if (commande.acheteur_id) {
-      const acheteurs = await db.select('acheteurs', {
-        where: { id: commande.acheteur_id },
-        limit: 1
-      });
-      const acheteur = acheteurs && acheteurs.length > 0 ? acheteurs[0] : null;
-      if (acheteur) {
-        acheteurData = {
-          id: acheteur.id,
-          nom: acheteur.nom,
-          prenom: acheteur.prenom,
-          email: acheteur.email,
-          telephone: acheteur.telephone
-        };
-      }
-    }
+    // Récupérer l'acheteur (avec fallback sur les champs de la commande)
+    const acheteurData = await getAcheteurData(commande);
 
     // Récupérer les détails de commande
     const details = await db.select('detail_commandes', {
@@ -152,24 +171,8 @@ export async function PUT(
     });
     const commande = commandes[0];
 
-    // Récupérer l'acheteur
-    let acheteurData = null;
-    if (commande.acheteur_id) {
-      const acheteurs = await db.select('acheteurs', {
-        where: { id: commande.acheteur_id },
-        limit: 1
-      });
-      const acheteur = acheteurs && acheteurs.length > 0 ? acheteurs[0] : null;
-      if (acheteur) {
-        acheteurData = {
-          id: acheteur.id,
-          nom: acheteur.nom,
-          prenom: acheteur.prenom,
-          email: acheteur.email,
-          telephone: acheteur.telephone
-        };
-      }
-    }
+    // Récupérer l'acheteur (avec fallback sur les champs de la commande)
+    const acheteurData = await getAcheteurData(commande);
 
     // Récupérer les détails de commande
     const details = await db.select('detail_commandes', {

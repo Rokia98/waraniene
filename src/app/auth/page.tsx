@@ -256,268 +256,244 @@ function AuthPageContent() {
     }
   };
 
+  const inputClass = (field: string) =>
+    `w-full pl-10 pr-4 py-3 border rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white ${
+      errors[field] ? 'border-red-400 bg-red-50' : 'border-gray-200'
+    }`;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white shadow-xl rounded-lg p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {isLogin ? 'Connexion Artisan' : 'Inscription Artisan'}
-            </h1>
-            <p className="text-gray-600">
-              {isLogin 
-                ? 'Accédez à votre espace artisan'
-                : 'Rejoignez la communauté des artisans Waraniéné'
-              }
+    <div className="min-h-screen flex">
+      {/* ── Panneau gauche – visuel culturel ─────────────────── */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        {/* Fond dégradé terracotta */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-800 via-primary-700 to-terracotta-700" />
+        {/* Pattern kente */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.3) 0, rgba(255,255,255,0.3) 2px, transparent 0, transparent 50%)',
+          backgroundSize: '20px 20px'
+        }} />
+
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white">
+                <path d="M3 6h18M3 12h18M3 18h18M6 3v18M12 3v18M18 3v18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <rect x="7" y="7" width="4" height="4" fill="currentColor" opacity="0.7" rx="0.5"/>
+                <rect x="13" y="13" width="4" height="4" fill="currentColor" opacity="0.7" rx="0.5"/>
+              </svg>
+            </div>
+            <span className="font-display text-xl font-bold">Tissés de Waraniéné</span>
+          </Link>
+
+          {/* Texte central */}
+          <div>
+            <div className="text-6xl mb-6">🧵</div>
+            <h2 className="font-display text-4xl font-bold leading-tight mb-4">
+              L&apos;art ancestral<br />
+              du tissage<br />
+              <span className="text-primary-200">Sénoufo</span>
+            </h2>
+            <p className="text-white/80 text-lg leading-relaxed max-w-sm">
+              Rejoignez les artisans tisserands de Waraniéné et vendez vos créations au monde entier.
             </p>
           </div>
 
-          {message && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-blue-600 mr-2" />
-                <p className="text-blue-800 text-sm">{message}</p>
+          {/* Témoignage */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+            <p className="text-white/90 italic text-sm leading-relaxed mb-3">
+              &ldquo;Depuis que j&apos;ai rejoint la plateforme, mes créations atteignent des clients jusqu&apos;en France et au Canada.&rdquo;
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center text-sm font-bold">K</div>
+              <div>
+                <p className="text-sm font-semibold">Koné Yacouba</p>
+                <p className="text-xs text-white/60">Artisan tisserand, Waraniéné</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Panneau droit – formulaire ─────────────────────── */}
+      <div className="flex-1 flex flex-col justify-center py-12 px-6 sm:px-12 lg:px-16 bg-white overflow-y-auto">
+        <div className="w-full max-w-md mx-auto">
+
+          {/* Logo mobile */}
+          <Link href="/" className="flex items-center gap-2.5 mb-8 lg:hidden">
+            <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white">
+                <path d="M3 6h18M3 12h18M3 18h18M6 3v18M12 3v18M18 3v18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <rect x="7" y="7" width="4" height="4" fill="currentColor" opacity="0.7" rx="0.5"/>
+              </svg>
+            </div>
+            <span className="font-display text-lg font-bold text-gray-900">Tissés de Waraniéné</span>
+          </Link>
+
+          {/* Titre */}
+          <div className="mb-8">
+            <h1 className="font-display text-3xl font-bold text-gray-900 mb-1.5">
+              {isLogin ? 'Bon retour 👋' : 'Créer un compte'}
+            </h1>
+            <p className="text-gray-500 text-sm">
+              {isLogin
+                ? 'Connectez-vous à votre espace artisan'
+                : 'Rejoignez la communauté des artisans Waraniéné'}
+            </p>
+          </div>
+
+          {/* Toggle connexion / inscription */}
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-8">
+            <button
+              type="button"
+              onClick={() => { setIsLogin(true); setErrors({}); }}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${isLogin ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Connexion
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsLogin(false); setErrors({}); }}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${!isLogin ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Inscription
+            </button>
+          </div>
+
+          {/* Bannière info */}
+          {message && (
+            <div className="mb-5 p-4 bg-blue-50 border border-blue-100 rounded-xl flex gap-2.5">
+              <AlertCircle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-blue-800 text-sm">{message}</p>
             </div>
           )}
 
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-amber-800 text-sm">
-              🧵 Cet espace est réservé aux <strong>artisans</strong>. Si vous êtes acheteur, votre compte sera créé automatiquement lors de votre première commande.
-            </p>
-          </div>
+          {!isLogin && (
+            <div className="mb-5 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+              <p className="text-amber-800 text-sm">
+                🧵 Espace réservé aux <strong>artisans</strong>. Les acheteurs n'ont pas besoin de compte pour commander.
+              </p>
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Formulaire */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
-                <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom complet
-                </label>
+                <label htmlFor="nom" className="label">Nom complet *</label>
                 <div className="relative">
-                  <User className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
-                  <input
-                    id="nom"
-                    name="nom"
-                    type="text"
-                    required
-                    value={formData.nom}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 ${
-                      errors.nom ? 'border-red-500' : ''
-                    }`}
-                    placeholder="Votre nom complet"
-                  />
+                  <User className="w-4.5 h-4.5 text-gray-400 absolute left-3.5 top-3.5" />
+                  <input id="nom" name="nom" type="text" required value={formData.nom} onChange={handleChange}
+                    className={inputClass('nom')} placeholder="Votre nom complet" />
                 </div>
-                {errors.nom && (
-                  <p className="text-red-500 text-sm mt-1">{errors.nom}</p>
-                )}
+                {errors.nom && <p className="text-red-500 text-xs mt-1">{errors.nom}</p>}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Adresse email
-              </label>
+              <label htmlFor="email" className="label">Adresse email *</label>
               <div className="relative">
-                <Mail className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 ${
-                    errors.email ? 'border-red-500' : ''
-                  }`}
-                  placeholder="votre@email.com"
-                />
+                <Mail className="w-4.5 h-4.5 text-gray-400 absolute left-3.5 top-3.5" />
+                <input id="email" name="email" type="email" required value={formData.email} onChange={handleChange}
+                  className={inputClass('email')} placeholder="votre@email.com" />
               </div>
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
             <div>
-              <label htmlFor="mot_de_passe" className="block text-sm font-medium text-gray-700 mb-2">
-                Mot de passe
-              </label>
+              <label htmlFor="mot_de_passe" className="label">Mot de passe *</label>
               <div className="relative">
-                <Lock className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
-                <input
-                  id="mot_de_passe"
-                  name="mot_de_passe"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={formData.mot_de_passe}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 ${
-                    errors.mot_de_passe ? 'border-red-500' : ''
-                  }`}
-                  placeholder="Votre mot de passe"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <Lock className="w-4.5 h-4.5 text-gray-400 absolute left-3.5 top-3.5" />
+                <input id="mot_de_passe" name="mot_de_passe" type={showPassword ? 'text' : 'password'}
+                  required value={formData.mot_de_passe} onChange={handleChange}
+                  className={inputClass('mot_de_passe')} placeholder="Mot de passe (min. 8 caractères)" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600 transition-colors">
+                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
                 </button>
               </div>
-              {errors.mot_de_passe && (
-                <p className="text-red-500 text-sm mt-1">{errors.mot_de_passe}</p>
-              )}
+              {errors.mot_de_passe && <p className="text-red-500 text-xs mt-1">{errors.mot_de_passe}</p>}
             </div>
 
             {!isLogin && (
               <>
                 <div>
-                  <label htmlFor="confirmer_mot_de_passe" className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirmer le mot de passe
-                  </label>
+                  <label htmlFor="confirmer_mot_de_passe" className="label">Confirmer le mot de passe *</label>
                   <div className="relative">
-                    <Lock className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
-                    <input
-                      id="confirmer_mot_de_passe"
-                      name="confirmer_mot_de_passe"
-                      type="password"
-                      required={!isLogin}
-                      value={formData.confirmer_mot_de_passe}
-                      onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 ${
-                        errors.confirmer_mot_de_passe ? 'border-red-500' : ''
-                      }`}
-                      placeholder="Confirmez votre mot de passe"
-                    />
+                    <Lock className="w-4.5 h-4.5 text-gray-400 absolute left-3.5 top-3.5" />
+                    <input id="confirmer_mot_de_passe" name="confirmer_mot_de_passe" type="password"
+                      required value={formData.confirmer_mot_de_passe} onChange={handleChange}
+                      className={inputClass('confirmer_mot_de_passe')} placeholder="Confirmez le mot de passe" />
                   </div>
-                  {errors.confirmer_mot_de_passe && (
-                    <p className="text-red-500 text-sm mt-1">{errors.confirmer_mot_de_passe}</p>
-                  )}
+                  {errors.confirmer_mot_de_passe && <p className="text-red-500 text-xs mt-1">{errors.confirmer_mot_de_passe}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="telephone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Téléphone (obligatoire)
-                  </label>
+                  <label htmlFor="telephone" className="label">Téléphone *</label>
                   <div className="relative">
-                    <Phone className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
-                    <input
-                      id="telephone"
-                      name="telephone"
-                      type="tel"
-                      required
-                      value={formData.telephone}
-                      onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 ${
-                        errors.telephone ? 'border-red-500' : ''
-                      }`}
-                      placeholder="+225 07 12 34 56 78"
-                    />
+                    <Phone className="w-4.5 h-4.5 text-gray-400 absolute left-3.5 top-3.5" />
+                    <input id="telephone" name="telephone" type="tel" required value={formData.telephone} onChange={handleChange}
+                      className={inputClass('telephone')} placeholder="+225 07 12 34 56 78" />
                   </div>
-                  {errors.telephone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.telephone}</p>
-                  )}
+                  {errors.telephone && <p className="text-red-500 text-xs mt-1">{errors.telephone}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="localisation" className="block text-sm font-medium text-gray-700 mb-2">
-                    Localisation (optionnel)
-                  </label>
+                  <label htmlFor="localisation" className="label">Localisation <span className="text-gray-400 font-normal">(optionnel)</span></label>
                   <div className="relative">
-                    <MapPin className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
-                    <input
-                      id="localisation"
-                      name="localisation"
-                      type="text"
-                      value={formData.localisation}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Waraniéné, Côte d'Ivoire"
-                    />
+                    <MapPin className="w-4.5 h-4.5 text-gray-400 absolute left-3.5 top-3.5" />
+                    <input id="localisation" name="localisation" type="text" value={formData.localisation} onChange={handleChange}
+                      className="input" placeholder="Waraniéné, Côte d'Ivoire" />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
-                    Biographie (optionnel)
-                  </label>
-                  <textarea
-                    id="bio"
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    rows={3}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 resize-none"
-                    placeholder="Présentez votre savoir-faire et votre expérience en tissage..."
-                  />
+                  <label htmlFor="bio" className="label">Biographie <span className="text-gray-400 font-normal">(optionnel)</span></label>
+                  <textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} rows={3}
+                    className="input resize-none" placeholder="Présentez votre savoir-faire et votre expérience…" />
                 </div>
               </>
             )}
 
             {isLogin && (
-              <div className="flex items-center">
-                <input
-                  id="rememberMe"
-                  name="rememberMe"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                  Se souvenir de moi
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 accent-primary-600 rounded" />
+                  <span className="text-sm text-gray-600">Se souvenir de moi</span>
                 </label>
+                <Link href="/auth/forgot-password" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                  Mot de passe oublié ?
+                </Link>
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
-              disabled={loading || Object.values(errors).some(error => error !== '')}
-              className="w-full py-3 text-lg"
+              disabled={loading || Object.values(errors).some(e => e !== '')}
+              className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold rounded-xl shadow-btn hover:shadow-btn-hover hover:-translate-y-0.5 transition-all duration-200 mt-2"
             >
-              {loading 
-                ? (isLogin ? 'Connexion...' : 'Inscription...') 
-                : (isLogin ? 'Se connecter' : "S'inscrire")
+              {loading
+                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{isLogin ? 'Connexion…' : 'Inscription…'}</span>
+                : (isLogin ? 'Se connecter' : "Créer mon compte")
               }
-            </Button>
+            </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              {isLogin ? "Pas encore de compte ?" : "Déjà un compte ?"}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                  AppService.clearFormDraft('auth-form');
-                }}
-                className="ml-1 text-primary-600 hover:text-primary-700 font-medium"
-              >
-                {isLogin ? "S'inscrire" : "Se connecter"}
-              </button>
-            </p>
-          </div>
+          <p className="mt-6 text-center text-sm text-gray-500">
+            {isLogin ? "Pas encore de compte ?" : "Déjà un compte ?"}{' '}
+            <button type="button"
+              onClick={() => { setIsLogin(!isLogin); setErrors({}); AppService.clearFormDraft('auth-form'); }}
+              className="text-primary-600 hover:text-primary-700 font-semibold">
+              {isLogin ? "S'inscrire" : "Se connecter"}
+            </button>
+          </p>
 
-          {isLogin && (
-            <div className="mt-4 text-center">
-              <Link 
-                href="/auth/forgot-password" 
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
-                Mot de passe oublié ?
-              </Link>
-            </div>
-          )}
-
-          <div className="mt-6 text-center">
-            <Link 
-              href="/" 
-              className="text-sm text-gray-600 hover:text-gray-700"
-            >
-               Retour à l&apos;accueil
+          <p className="mt-4 text-center">
+            <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              ← Retour à l&apos;accueil
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </div>

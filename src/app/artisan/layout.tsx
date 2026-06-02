@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, Package, ShoppingCart, BarChart3, User } from 'lucide-react';
+import { LogOut, Package, ShoppingCart, BarChart3, User, Wallet, ArrowUpCircle, TrendingUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface ArtisanLayoutProps {
@@ -71,15 +71,33 @@ export default function ArtisanLayout({ children }: ArtisanLayoutProps) {
     },
     {
       name: 'Produits',
-      href: '/artisan/dashboard?tab=produits',
+      href: '/artisan/produits/ajouter',
       icon: Package,
       active: pathname.includes('/artisan/produits')
     },
     {
       name: 'Commandes',
-      href: '/artisan/dashboard?tab=commandes',
+      href: '/artisan/commandes',
       icon: ShoppingCart,
       active: pathname.includes('/artisan/commandes')
+    },
+    {
+      name: 'Portefeuille',
+      href: '/artisan/portefeuille',
+      icon: Wallet,
+      active: pathname.includes('/artisan/portefeuille')
+    },
+    {
+      name: 'Retraits',
+      href: '/artisan/retraits',
+      icon: ArrowUpCircle,
+      active: pathname.includes('/artisan/retraits')
+    },
+    {
+      name: 'Statistiques',
+      href: '/artisan/statistiques',
+      icon: TrendingUp,
+      active: pathname.includes('/artisan/statistiques')
     },
   ];
 

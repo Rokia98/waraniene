@@ -52,6 +52,17 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // Fallback: utiliser les champs de la commande si pas d'acheteur lié
+        if (!acheteurData && (commande.nom_acheteur || commande.email_acheteur)) {
+          const nameParts = (commande.nom_acheteur || '').trim().split(' ');
+          acheteurData = {
+            id: null,
+            nom: nameParts.slice(1).join(' ') || nameParts[0] || '',
+            email: commande.email_acheteur || '',
+            telephone: commande.telephone_acheteur || ''
+          };
+        }
+
         // Récupérer les détails de commande
         const details = await db.select('detail_commandes', {
           where: { commande_id: commande.id }
@@ -206,7 +217,7 @@ export async function POST(request: NextRequest) {
       } else {
         // Aucun compte trouvé - créer automatiquement
         const tempPassword = crypto.randomBytes(8).toString('hex');
-        const hashedPassword = await bcrypt.hash(tempPassword, 12);
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const userId = generateUUID();
 
         // Extraire prénom et nom depuis nom_acheteur
@@ -214,15 +225,19 @@ export async function POST(request: NextRequest) {
         const prenom = nameParts[0] || '';
         const nom = nameParts.slice(1).join(' ') || nameParts[0] || '';
 
-        const acheteurData = {
+        const acheteurData: any = {
           id: userId,
           nom: nom,
           prenom: prenom,
           email: email_acheteur,
           mot_de_passe: hashedPassword,
-          telephone: telephone_acheteur,
-          adresse: adresse_livraison || ''
+          telephone: telephone_acheteur || ''
         };
+
+        // Ajouter l'adresse seulement si elle est courte et valide
+        if (adresse_livraison && adresse_livraison.length <= 500) {
+          acheteurData.adresse = adresse_livraison;
+        }
 
         try {
           autoAcheteur = await db.insert('acheteurs', acheteurData);
@@ -245,8 +260,22 @@ export async function POST(request: NextRequest) {
 
           console.log('✅ Compte acheteur créé automatiquement:', email_acheteur);
         } catch (error: any) {
-          console.error('⚠️ Erreur création compte auto (commande continue):', error);
-          // On continue sans créer le compte - la commande reste anonyme
+          console.error('⚠️ Erreur création compte auto:', error?.message || error);
+          
+          // Si c'est un doublon d'email, récupérer le compte existant
+          if (error?.message?.includes('Duplicate') || error?.code === 'ER_DUP_ENTRY') {
+            console.log('🔄 Tentative de récupération du compte existant...');
+            const existing = await db.select('acheteurs', {
+              where: { email: email_acheteur },
+              limit: 1
+            });
+            if (existing && existing.length > 0) {
+              resolvedAcheteurId = existing[0].id;
+              autoAcheteur = existing[0];
+              console.log('👤 Compte récupéré après doublon:', email_acheteur);
+            }
+          }
+          // La commande continuera dans tous les cas grâce au fallback nom_acheteur/email_acheteur
         }
       }
     }

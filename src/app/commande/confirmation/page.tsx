@@ -91,10 +91,10 @@ function OrderConfirmationContent() {
             mode_paiement: cmd.mode_paiement || 'Non spécifié',
             adresse_livraison: cmd.adresse_livraison || 'Non spécifiée',
             client: {
-              nom: cmd.acheteur?.nom || '',
-              prenom: cmd.acheteur?.prenom || '',
-              email: cmd.acheteur?.email || '',
-              telephone: cmd.acheteur?.telephone || ''
+              nom: cmd.acheteur?.nom || (cmd.nom_acheteur ? cmd.nom_acheteur.split(' ').slice(1).join(' ') : ''),
+              prenom: cmd.acheteur?.prenom || (cmd.nom_acheteur ? cmd.nom_acheteur.split(' ')[0] : ''),
+              email: cmd.acheteur?.email || cmd.email_acheteur || '',
+              telephone: cmd.acheteur?.telephone || cmd.telephone_acheteur || ''
             }
           };
 

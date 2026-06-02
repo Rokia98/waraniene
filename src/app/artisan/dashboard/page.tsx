@@ -72,6 +72,7 @@ interface Commande {
   methode_paiement: string;
   adresse_livraison: string;
   date_commande: string;
+  contient_mes_produits?: boolean;
   produits: Array<{
     id: string;
     nom: string;
@@ -79,6 +80,7 @@ interface Commande {
     prix_unitaire: number;
     total: number;
     photo: string | null;
+    est_mon_produit?: boolean;
   }>;
 }
 
@@ -217,9 +219,12 @@ export default function DashboardArtisanPage() {
     loadDashboardData();
   };
 
-  const filteredCommandes = orderStatusFilter === 'all' 
-    ? commandes 
-    : commandes.filter(c => c.statut_livraison === orderStatusFilter);
+  const filteredCommandes = orderStatusFilter === 'all'
+    ? commandes
+    : commandes.filter(c =>
+        c.statut_livraison === orderStatusFilter ||
+        c.statut_paiement === orderStatusFilter
+      );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
@@ -593,181 +598,158 @@ export default function DashboardArtisanPage() {
 
                 {/* Filtres de statut */}
                 <div className="flex flex-wrap gap-2 mb-6">
-                  <button
-                    onClick={() => setOrderStatusFilter('all')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      orderStatusFilter === 'all'
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Toutes ({commandes.length})
-                  </button>
-                  <button
-                    onClick={() => setOrderStatusFilter('en_preparation')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      orderStatusFilter === 'en_preparation'
-                        ? 'bg-yellow-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    En préparation ({commandes.filter(c => c.statut_livraison === 'en_preparation').length})
-                  </button>
-                  <button
-                    onClick={() => setOrderStatusFilter('expedie')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      orderStatusFilter === 'expedie'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Expédié ({commandes.filter(c => c.statut_livraison === 'expedie').length})
-                  </button>
-                  <button
-                    onClick={() => setOrderStatusFilter('livre')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      orderStatusFilter === 'livre'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Livré ({commandes.filter(c => c.statut_livraison === 'livre').length})
-                  </button>
+                  {[
+                    { key: 'all',           label: 'Toutes',         color: 'bg-primary-500' },
+                    { key: 'en_attente',    label: 'En attente',     color: 'bg-yellow-500' },
+                    { key: 'confirmee',     label: 'Confirmées',     color: 'bg-blue-500' },
+                    { key: 'en_preparation',label: 'En préparation', color: 'bg-purple-500' },
+                    { key: 'expediee',      label: 'Expédiées',      color: 'bg-cyan-600' },
+                    { key: 'livree',        label: 'Livrées',        color: 'bg-green-600' },
+                  ].map(({ key, label, color }) => (
+                    <button
+                      key={key}
+                      onClick={() => setOrderStatusFilter(key)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        orderStatusFilter === key
+                          ? `${color} text-white`
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {label} ({key === 'all' ? commandes.length : commandes.filter(c => c.statut_livraison === key || c.statut_paiement === key).length})
+                    </button>
+                  ))}
                 </div>
 
                 {/* Liste des commandes */}
                 {filteredCommandes.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                      {orderStatusFilter === 'all' 
-                        ? 'Aucune commande' 
-                        : 'Aucune commande pour ce filtre'}
-                    </h3>
-                    <p className="text-gray-500">Les commandes contenant vos produits apparaîtront ici</p>
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">Aucune commande</h3>
+                    <p className="text-gray-500">Les commandes des clients apparaîtront ici</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {filteredCommandes.map((commande) => (
-                      <div
-                        key={commande.id}
-                        className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                Commande #{commande.numero_commande}
-                              </h3>
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  commande.statut_livraison === 'en_preparation'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : commande.statut_livraison === 'expedie'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : commande.statut_livraison === 'en_livraison'
-                                    ? 'bg-indigo-100 text-indigo-800'
-                                    : commande.statut_livraison === 'livre'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}
-                              >
-                                {commande.statut_livraison === 'en_preparation'
-                                  ? 'En préparation'
-                                  : commande.statut_livraison === 'expedie'
-                                  ? 'Expédié'
-                                  : commande.statut_livraison === 'en_livraison'
-                                  ? 'En livraison'
-                                  : commande.statut_livraison === 'livre'
-                                  ? 'Livré'
-                                  : 'Annulé'}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
-                              <div>
-                                <span className="font-medium">Client:</span> {commande.acheteur_nom}
-                              </div>
-                              <div>
-                                <span className="font-medium">Email:</span> {commande.acheteur_email}
-                              </div>
-                              <div>
-                                <span className="font-medium">Tél:</span> {commande.acheteur_telephone}
-                              </div>
-                            </div>
-                            <div className="mt-2 text-sm text-gray-600">
-                              <span className="font-medium">Date:</span>{' '}
-                              {new Date(commande.date_commande).toLocaleDateString('fr-FR', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => handleUpdateOrderStatus(commande)}
-                            variant="outline"
-                            size="sm"
-                            className="ml-4"
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Changer statut
-                          </Button>
-                        </div>
+                    {filteredCommandes.map((commande) => {
+                      const statut = commande.statut_livraison || commande.statut_paiement || 'en_attente';
+                      const statutLabel: Record<string, string> = {
+                        en_attente: 'En attente', confirmee: 'Confirmée',
+                        en_preparation: 'En préparation', expediee: 'Expédiée',
+                        en_livraison: 'En livraison', livree: 'Livrée', annulee: 'Annulée',
+                        paye: 'Payé', echec: 'Échec',
+                      };
+                      const statutColor: Record<string, string> = {
+                        en_attente: 'bg-yellow-100 text-yellow-800',
+                        confirmee: 'bg-blue-100 text-blue-800',
+                        en_preparation: 'bg-purple-100 text-purple-800',
+                        expediee: 'bg-cyan-100 text-cyan-800',
+                        en_livraison: 'bg-indigo-100 text-indigo-800',
+                        livree: 'bg-green-100 text-green-800',
+                        annulee: 'bg-red-100 text-red-800',
+                        paye: 'bg-green-100 text-green-800',
+                        echec: 'bg-red-100 text-red-800',
+                      };
 
-                        {/* Produits de la commande */}
-                        <div className="border-t pt-4 mt-4">
-                          <h4 className="font-medium text-gray-900 mb-3">Vos produits dans cette commande:</h4>
-                          <div className="space-y-2">
-                            {commande.produits.map((produit, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
-                              >
-                                <div className="flex items-center space-x-3">
-                                  {produit.photo && (
-                                    <img
-                                      src={produit.photo}
-                                      alt={produit.nom}
-                                      className="w-12 h-12 object-cover rounded"
-                                    />
-                                  )}
-                                  <div>
-                                    <p className="font-medium text-gray-900">{produit.nom}</p>
-                                    <p className="text-sm text-gray-600">
-                                      Quantité: {produit.quantite} × {formatCurrency(produit.prix_unitaire)}
-                                    </p>
+                      return (
+                        <div key={commande.id} className="border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-shadow bg-white">
+                          {/* En-tête */}
+                          <div className="flex items-start justify-between mb-4 gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="text-base font-bold text-gray-900">
+                                  Commande #{commande.numero_commande}
+                                </h3>
+                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statutColor[statut] || 'bg-gray-100 text-gray-700'}`}>
+                                  {statutLabel[statut] || statut}
+                                </span>
+                                {commande.contient_mes_produits && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                                    ✦ Mes produits
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Infos client */}
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                                <div className="flex items-center gap-1.5 text-gray-700">
+                                  <span className="text-gray-400">👤</span>
+                                  <span className="font-medium truncate">{commande.acheteur_nom || 'Client inconnu'}</span>
+                                </div>
+                                {commande.acheteur_email && (
+                                  <div className="flex items-center gap-1.5 text-gray-500 truncate">
+                                    <span className="text-gray-400">✉</span>
+                                    <span className="truncate">{commande.acheteur_email}</span>
+                                  </div>
+                                )}
+                                {commande.acheteur_telephone && (
+                                  <div className="flex items-center gap-1.5 text-gray-500">
+                                    <span className="text-gray-400">📞</span>
+                                    {commande.acheteur_telephone}
+                                  </div>
+                                )}
+                              </div>
+
+                              <p className="text-xs text-gray-400 mt-1.5">
+                                {commande.date_commande
+                                  ? new Date(commande.date_commande).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                  : '—'}
+                                {commande.methode_paiement && (
+                                  <span className="ml-2 text-gray-400">· {commande.methode_paiement.replace('_', ' ')}</span>
+                                )}
+                              </p>
+                            </div>
+
+                            <Button onClick={() => handleUpdateOrderStatus(commande)} variant="outline" size="sm" className="shrink-0">
+                              <Edit className="w-3.5 h-3.5 mr-1.5" />
+                              Statut
+                            </Button>
+                          </div>
+
+                          {/* Produits */}
+                          <div className="border-t border-gray-100 pt-3 mt-3">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                              Produits ({commande.produits?.length || 0})
+                            </p>
+                            <div className="space-y-2">
+                              {(commande.produits || []).map((produit, idx) => (
+                                <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl ${produit.est_mon_produit ? 'bg-orange-50 border border-orange-100' : 'bg-gray-50'}`}>
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {produit.photo ? (
+                                      <img src={produit.photo} alt={produit.nom} className="w-10 h-10 object-cover rounded-lg shrink-0" />
+                                    ) : (
+                                      <div className="w-10 h-10 bg-gray-200 rounded-lg shrink-0 flex items-center justify-center text-gray-400 text-xs">📦</div>
+                                    )}
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-gray-900 text-sm truncate">{produit.nom}</p>
+                                      <p className="text-xs text-gray-500">{produit.quantite} × {formatCurrency(produit.prix_unitaire)}</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0 ml-2">
+                                    <p className="font-bold text-gray-900 text-sm">{formatCurrency(produit.total)}</p>
+                                    {produit.est_mon_produit && (
+                                      <span className="text-2xs text-orange-600 font-semibold">Mon produit</span>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <p className="font-semibold text-gray-900">
-                                    {formatCurrency(produit.total)}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Informations de livraison */}
-                        <div className="border-t pt-4 mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h5 className="font-medium text-gray-900 mb-2">Adresse de livraison</h5>
-                            <p className="text-sm text-gray-600">{commande.adresse_livraison}</p>
-                          </div>
-                          <div>
-                            <h5 className="font-medium text-gray-900 mb-2">Total de vos produits</h5>
-                            <p className="text-2xl font-bold text-primary-600">
-                              {formatCurrency(commande.montant_artisan)}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              (Commande totale: {formatCurrency(commande.montant_total_commande)})
-                            </p>
+                          {/* Footer : adresse + totaux */}
+                          <div className="border-t border-gray-100 pt-3 mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                            {commande.adresse_livraison && (
+                              <div className="text-xs text-gray-500">
+                                <span className="font-semibold text-gray-700">Livraison :</span>{' '}
+                                {commande.adresse_livraison}
+                              </div>
+                            )}
+                            <div className="text-right shrink-0">
+                              <p className="text-xl font-bold text-primary-600">{formatCurrency(commande.montant_total_commande)}</p>
+                              <p className="text-xs text-gray-400">Total commande</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
